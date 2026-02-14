@@ -36,9 +36,11 @@ const STATUS_SCORE: Record<CallProgressItem["status"], number> = {
 
 type ProgressTimelineProps = {
   calls: CallProgressItem[];
+  selectedCallId?: string | null;
+  onSelectCall?: (callId: string) => void;
 };
 
-export function ProgressTimeline({ calls }: ProgressTimelineProps) {
+export function ProgressTimeline({ calls, selectedCallId, onSelectCall }: ProgressTimelineProps) {
   const completed = calls.filter((call) => call.status === "completed" || call.status === "failed").length;
   const overall = calls.length > 0 ? Math.round((completed / calls.length) * 100) : 0;
 
@@ -64,8 +66,15 @@ export function ProgressTimeline({ calls }: ProgressTimelineProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {calls.map((call) => (
-            <TableRow key={call.id}>
+          {calls.map((call) => {
+            const isSelected = selectedCallId === call.id;
+            return (
+              <TableRow
+                key={call.id}
+                data-state={isSelected ? "selected" : undefined}
+                className={onSelectCall ? "cursor-pointer" : undefined}
+                onClick={() => onSelectCall?.(call.id)}
+              >
               <TableCell>
                 <div className="font-medium">{call.contactName}</div>
                 <div className="text-xs text-muted-foreground">{call.phone}</div>
@@ -75,15 +84,11 @@ export function ProgressTimeline({ calls }: ProgressTimelineProps) {
                 <Badge variant={STATUS_VARIANT[call.status]}>{call.status}</Badge>
               </TableCell>
               <TableCell>
-                <div className="space-y-1">
-                  <Progress value={STATUS_SCORE[call.status]} />
-                  {call.failureReason ? (
-                    <p className="text-xs text-destructive">{call.failureReason}</p>
-                  ) : null}
-                </div>
+                <Progress value={STATUS_SCORE[call.status]} />
               </TableCell>
-            </TableRow>
-          ))}
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

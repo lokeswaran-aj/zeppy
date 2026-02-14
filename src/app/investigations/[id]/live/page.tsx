@@ -18,7 +18,7 @@ export default function InvestigationLivePage() {
   const [status, setStatus] = useState<InvestigationStatus>("running");
   const [calls, setCalls] = useState<CallProgressItem[]>([]);
   const [lines, setLines] = useState<TranscriptLine[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedCallId, setSelectedCallId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!investigationId) {
@@ -56,15 +56,13 @@ export default function InvestigationLivePage() {
 
         if (payload.type === "investigation.failed") {
           setStatus("failed");
-          setError(payload.reason);
         }
       } catch {
-        setError("Could not parse live update.");
+        // Ignore malformed SSE payloads.
       }
     };
 
     eventSource.onerror = () => {
-      setError("Live updates disconnected. Please refresh.");
       eventSource.close();
     };
 
@@ -76,6 +74,16 @@ export default function InvestigationLivePage() {
   const completedCalls = useMemo(
     () => calls.filter((call) => call.status === "completed" || call.status === "failed").length,
     [calls],
+  );
+  const resolvedSelectedCallId = useMemo(() => {
+    if (selectedCallId && calls.some((call) => call.id === selectedCallId)) {
+      return selectedCallId;
+    }
+    return calls[0]?.id ?? null;
+  }, [calls, selectedCallId]);
+  const selectedCall = useMemo(
+    () => calls.find((call) => call.id === resolvedSelectedCallId) ?? null,
+    [calls, resolvedSelectedCallId],
   );
 
   return (
@@ -102,12 +110,19 @@ export default function InvestigationLivePage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <ProgressTimeline calls={calls} />
+          <ProgressTimeline
+            calls={calls}
+            selectedCallId={resolvedSelectedCallId}
+            onSelectCall={(callId) => setSelectedCallId(callId)}
+          />
         </CardContent>
       </Card>
 
-      <TranscriptPane lines={lines} />
+      <TranscriptPane
+        lines={lines}
+        selectedCallId={resolvedSelectedCallId}
+        selectedContactName={selectedCall?.contactName}
+      />
     </main>
   );
 }
