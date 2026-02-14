@@ -75,6 +75,10 @@ export default function Home() {
       setError("Extract and review details first.");
       return;
     }
+    if (!voiceAgentName.trim()) {
+      setError("Enter a Voice Agent Name so the AI introduces itself with your name.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
 

@@ -103,17 +103,30 @@ function mergeAndNormalizeContacts(
 ) {
   const contacts: ParsedContact[] = [];
   const seen = new Set<string>();
+  const fallbackPhoneByFingerprint = new Map<string, string>();
+  for (const phoneCandidate of fallbackPhones) {
+    const normalized = normalizePhone(phoneCandidate);
+    if (!normalized) {
+      continue;
+    }
+    const fingerprint = phoneFingerprint(normalized);
+    if (!fingerprint || fallbackPhoneByFingerprint.has(fingerprint)) {
+      continue;
+    }
+    fallbackPhoneByFingerprint.set(fingerprint, normalized);
+  }
 
   for (const contact of aiContacts) {
-    const phone = normalizePhone(contact.phone);
-    if (!isValidPhone(phone)) {
+    const phone = resolvePhoneFromInput(contact.phone, fallbackPhoneByFingerprint);
+    if (!phone) {
       continue;
     }
-    if (seen.has(phone)) {
+    const fingerprint = phoneFingerprint(phone);
+    if (!fingerprint || seen.has(fingerprint)) {
       continue;
     }
 
-    seen.add(phone);
+    seen.add(fingerprint);
     const locationHint = sanitizeOptionalText(contact.locationHint, 120);
     const notes = sanitizeOptionalText(contact.notes, 240);
     const parsedLanguage = normalizeLanguage(contact.language);
@@ -135,14 +148,15 @@ function mergeAndNormalizeContacts(
 
   for (const phoneCandidate of fallbackPhones) {
     const phone = normalizePhone(phoneCandidate);
-    if (!isValidPhone(phone)) {
+    if (!phone) {
       continue;
     }
-    if (seen.has(phone)) {
+    const fingerprint = phoneFingerprint(phone);
+    if (!fingerprint || seen.has(fingerprint)) {
       continue;
     }
 
-    seen.add(phone);
+    seen.add(fingerprint);
     const context = findPhoneContext(rawInput, phoneCandidate);
     contacts.push({
       name: `Contact ${contacts.length + 1}`,
@@ -187,8 +201,8 @@ function normalizeStringList(values: string[]) {
 }
 
 function extractPhoneCandidates(text: string) {
-  const matches = text.match(/(?:\+?\d[\d\s().-]{6,}\d)/g) ?? [];
-  return normalizeStringList(matches.map(normalizePhone).filter(isValidPhone));
+  const matches = text.match(/(?:\+?\d[\d\s().-]{6,}\d)(?!-\p{L})/gu) ?? [];
+  return normalizeStringList(matches.map(normalizePhone).filter(Boolean));
 }
 
 function extractQuestionLines(text: string) {
@@ -247,6 +261,25 @@ function findPhoneContext(rawInput: string, phoneCandidate: string) {
   return "";
 }
 
+function phoneFingerprint(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) {
+    return "";
+  }
+  return digits.length > 10 ? digits.slice(-10) : digits;
+}
+
+function resolvePhoneFromInput(
+  phone: string,
+  fallbackPhoneByFingerprint: Map<string, string>,
+) {
+  const fingerprint = phoneFingerprint(phone);
+  if (!fingerprint) {
+    return "";
+  }
+  return fallbackPhoneByFingerprint.get(fingerprint) ?? "";
+}
+
 function normalizeLanguage(value: string | null | undefined): PreferredLanguage | null {
   const normalized = value?.trim().toLowerCase().replace(/\s+/g, " ");
   if (!normalized) {
@@ -256,9 +289,14 @@ function normalizeLanguage(value: string | null | undefined): PreferredLanguage 
 }
 
 function normalizePhone(raw: string) {
-  const value = raw.trim();
+  let value = raw.trim();
   if (!value) {
     return "";
+  }
+
+  // Avoid pulling trailing singleton list markers (e.g. "... +9199... 2-sharing").
+  while (/\s+\d$/.test(value)) {
+    value = value.replace(/\s+\d$/, "").trimEnd();
   }
 
   if (value.startsWith("+")) {
@@ -283,7 +321,3 @@ function normalizePhone(raw: string) {
   return digits;
 }
 
-function isValidPhone(phone: string) {
-  const digits = phone.replace(/\D/g, "");
-  return digits.length >= 7 && digits.length <= 15;
-}
