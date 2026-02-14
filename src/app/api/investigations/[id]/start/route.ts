@@ -12,7 +12,10 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-export async function POST(_: Request, { params }: RouteContext) {
+export async function POST(request: Request, { params }: RouteContext) {
+  const body = await request.json().catch(() => null);
+  const rawAgentName = typeof body?.agentName === "string" ? body.agentName.trim() : "";
+  const agentName = rawAgentName || "assistant";
   const parsedParams = investigationParamsSchema.safeParse(await params);
   if (!parsedParams.success) {
     logger.warn("api.investigation.start.invalidId");
@@ -63,7 +66,7 @@ export async function POST(_: Request, { params }: RouteContext) {
   }
 
   // Run asynchronously so API returns immediately and SSE can stream progress.
-  void runInvestigation(id).catch(async (error) => {
+  void runInvestigation(id, { agentName }).catch(async (error) => {
     const reason = error instanceof Error ? error.message : "Investigation failed unexpectedly.";
     logger.error("api.investigation.start.backgroundFailed", {
       investigationId: id,

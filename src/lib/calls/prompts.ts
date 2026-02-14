@@ -17,29 +17,42 @@ export type RealtimeCallPromptInput = {
   requirement: string;
   language: PreferredLanguage;
   contactName: string;
+  agentName: string;
 };
 
 export function buildRealtimeInstructions(input: RealtimeCallPromptInput) {
-  const language = capitalize(input.language);
+  const language = getLanguageLabel(input.language);
+  const agentName = normalizeAgentName(input.agentName);
   return [
-    "You are Zeppy, an outbound phone investigation assistant.",
-    `Speak naturally in ${language}.`,
+    `You are ${agentName}, an outbound phone investigation assistant.`,
     `You are speaking with ${input.contactName}.`,
     `Requirement to investigate: "${input.requirement}".`,
-    `In your first turn, greet ${input.contactName} by name and mention you are calling regarding this requirement.`,
+    `Start in ${language}.`,
+    "If the language signal is unclear, start in English.",
+    "If the contact responds in a different language, briefly acknowledge and switch to that language, then continue in that language for the rest of the call.",
+    "For Tamil conversations, use natural spoken Tamil with common everyday English words where people normally mix them. Avoid overly pure or literary Tamil.",
+    "If the requirement text includes a section like 'Priority questions user wants answered:' with numbered items, treat those as high-priority questions and cover them naturally during the call.",
+    "Treat this as a generic investigation workflow across any domain (travel, rentals, PGs, vendors, hiring candidates, services, etc.).",
+    `In your first turn, introduce yourself as ${agentName}, greet ${input.contactName} by name, and mention you are calling regarding this requirement.`,
     "Do not frame the requirement as your own need, and do not ask whether the callee personally needs it.",
     "Treat the callee as an information source/provider who can share details relevant to the requirement.",
-    "Ask short, clear follow-up questions to gather requirement-specific facts such as pricing/cost, timelines/availability, fit/constraints, and next actions.",
+    "Ask short, clear follow-up questions to gather requirement-specific facts such as pricing/cost, timelines/availability, fit/constraints, process steps, and next actions.",
+    "Use any intake-generated question hints and contact-specific questions embedded in the requirement context as part of your questioning plan.",
     "Adapt to the requirement domain; avoid assumptions tied to any single use case (for example, housing-only assumptions).",
+    "Maintain a mental checklist and try to get at least one concrete answer for each important question before ending.",
     "Keep the conversation concise, natural, and practical.",
   ].join(" ");
 }
 
 export function buildRealtimeFirstReplyInstructions(input: RealtimeCallPromptInput) {
+  const language = getLanguageLabel(input.language);
+  const agentName = normalizeAgentName(input.agentName);
   return [
-    `Introduce yourself briefly and greet ${input.contactName} by name.`,
+    `Introduce yourself briefly as ${agentName} and greet ${input.contactName} by name in ${language}.`,
     "Mention the requirement context in one sentence.",
-    "Ask 1-2 focused questions to begin information gathering.",
+    "Ask 1-2 focused questions to begin information gathering, prioritizing user-provided question hints when present.",
+    "If the contact replies in a different language, confirm and switch to that language from the next turn.",
+    "If speaking Tamil, keep it conversational with natural English words as people use in daily speech.",
     "Do not ask whether they personally need the requirement.",
   ].join(" ");
 }
@@ -47,7 +60,7 @@ export function buildRealtimeFirstReplyInstructions(input: RealtimeCallPromptInp
 export function buildConversationSystemPrompt(language: PreferredLanguage) {
   const languageLabel = getLanguageLabel(language);
   return [
-    `You are Zeppy, a phone investigation assistant speaking in ${languageLabel}.`,
+    `You are a phone investigation assistant speaking in ${languageLabel}.`,
     "Generate a concise, realistic call transcript that investigates the user's requirement.",
     "Do not assume the contact personally needs the requirement; treat them as an information source.",
     "Use exactly these speaker labels at line starts: AGENT: and CONTACT:.",
@@ -189,9 +202,7 @@ export const extractionResponseSchema = {
   ],
 } as const;
 
-function capitalize(value: string) {
-  if (!value) {
-    return value;
-  }
-  return value[0]?.toUpperCase() + value.slice(1).toLowerCase();
+function normalizeAgentName(value: string) {
+  const cleaned = value.trim();
+  return cleaned.length > 0 ? cleaned : "assistant";
 }

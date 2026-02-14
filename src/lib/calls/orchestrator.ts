@@ -10,7 +10,12 @@ import { logger, maskPhone } from "@/lib/logger";
 import { executeInvestigationCall } from "./runner";
 import { appendTranscript, publishCallRecording, saveExtractedFinding, updateCallStatus } from "./state";
 
-export async function runInvestigation(investigationId: string) {
+type RunInvestigationOptions = {
+  agentName?: string;
+};
+
+export async function runInvestigation(investigationId: string, options?: RunInvestigationOptions) {
+  const agentName = options?.agentName?.trim() || "assistant";
   const investigation = await db.investigation.findUnique({
     where: { id: investigationId },
     include: {
@@ -72,6 +77,7 @@ export async function runInvestigation(investigationId: string) {
               investigationId,
               callId: call.id,
               requirement: investigation.requirement,
+              agentName,
               contact: {
                 name: call.contact.name,
                 phone: call.contact.phone,

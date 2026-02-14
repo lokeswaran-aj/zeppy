@@ -19,6 +19,7 @@ export type ExecuteCallInput = {
   investigationId: string;
   callId: string;
   requirement: string;
+  agentName: string;
   contact: {
     name: string;
     phone: string;
@@ -53,6 +54,7 @@ export async function executeInvestigationCall(input: ExecuteCallInput): Promise
       investigationId: input.investigationId,
       callId: input.callId,
       requirement: input.requirement,
+      agentName: input.agentName,
       language: input.contact.language,
       contactName: input.contact.name,
       contactPhone: input.contact.phone,

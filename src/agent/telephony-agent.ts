@@ -19,6 +19,7 @@ type DispatchMetadata = {
   investigationId: string;
   callId: string;
   requirement: string;
+  agentName: string;
   language: PreferredLanguage;
   contactName: string;
   contactPhone: string;
@@ -31,6 +32,7 @@ export default defineAgent({
       investigationId: metadata.investigationId,
       callId: metadata.callId,
       roomName: ctx.room.name,
+      agentName: metadata.agentName,
       contactName: metadata.contactName,
       language: metadata.language,
     });
@@ -47,6 +49,7 @@ export default defineAgent({
         // Keep audio responses and rely on transcription events for persisted text.
         modalities: [Modality.AUDIO],
         instructions: buildRealtimeInstructions({
+          agentName: metadata.agentName,
           contactName: metadata.contactName,
           language: metadata.language,
           requirement: metadata.requirement,
@@ -130,6 +133,7 @@ export default defineAgent({
       room: ctx.room,
       agent: new voice.Agent({
         instructions: buildRealtimeInstructions({
+          agentName: metadata.agentName,
           contactName: metadata.contactName,
           language: metadata.language,
           requirement: metadata.requirement,
@@ -139,6 +143,7 @@ export default defineAgent({
 
     await session.generateReply({
       instructions: buildRealtimeFirstReplyInstructions({
+        agentName: metadata.agentName,
         contactName: metadata.contactName,
         language: metadata.language,
         requirement: metadata.requirement,
@@ -187,10 +192,12 @@ function parseDispatchMetadata(raw: string): DispatchMetadata {
       throw new Error("Dispatch metadata is missing required fields.");
     }
 
+    const agentName = typeof parsed.agentName === "string" ? parsed.agentName.trim() : "";
     return {
       callId: parsed.callId,
       investigationId: parsed.investigationId,
       requirement: parsed.requirement,
+      agentName: agentName || "assistant",
       language: parsed.language,
       contactName: parsed.contactName,
       contactPhone: parsed.contactPhone,

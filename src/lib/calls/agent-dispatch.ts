@@ -12,6 +12,7 @@ type DispatchVoiceAgentInput = {
     investigationId: string;
     callId: string;
     requirement: string;
+    agentName: string;
     language: PreferredLanguage;
     contactName: string;
     contactPhone: string;

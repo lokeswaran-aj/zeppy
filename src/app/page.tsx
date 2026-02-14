@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GridPattern } from "@/components/ui/grid-pattern";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
@@ -18,12 +19,14 @@ import type { ParsedIntakePreview } from "@/lib/domain";
 export default function Home() {
   const router = useRouter();
   const [inputText, setInputText] = useState("");
+  const [voiceAgentName, setVoiceAgentName] = useState("");
   const [preview, setPreview] = useState<ParsedIntakePreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const canSubmit = inputText.trim().length > 12;
+  const effectiveVoiceAgentName = voiceAgentName.trim() || "assistant";
 
   const extractPreview = async (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
@@ -100,6 +103,12 @@ export default function Home() {
 
       const startResponse = await fetch(`/api/investigations/${investigationId}/start`, {
         method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          agentName: effectiveVoiceAgentName,
+        }),
       });
 
       if (!startResponse.ok) {
@@ -169,6 +178,20 @@ export default function Home() {
           <CardContent>
             <form className="space-y-6" onSubmit={extractPreview}>
               <div className="space-y-2">
+                <Label htmlFor="voiceAgentName">Voice Agent Name</Label>
+                <Input
+                  id="voiceAgentName"
+                  value={voiceAgentName}
+                  onChange={(event) => setVoiceAgentName(event.target.value)}
+                  placeholder="Enter the name agent should use (e.g., Loki)"
+                  className="border-border/70 bg-background/70 shadow-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  This is used only for this launch and is not saved in the database.
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="inputText">Briefing</Label>
                 <Textarea
                   id="inputText"
@@ -233,6 +256,10 @@ export default function Home() {
                 <div>
                   <p className="text-sm font-medium">Parsed Requirement</p>
                   <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{preview.requirement}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Voice Agent Name</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{effectiveVoiceAgentName}</p>
                 </div>
 
                 <div className="space-y-2">
@@ -317,7 +344,7 @@ export default function Home() {
                 You review contacts, language, and question hints before launch.
               </div>
               <div className="rounded-xl border border-border/70 bg-background/70 p-3">
-                Once approved, Zeppy starts live calls and tracks progress in real time.
+                Once approved, your named voice agent starts live calls and tracks progress in real time.
               </div>
             </CardContent>
           </Card>
