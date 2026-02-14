@@ -54,7 +54,9 @@ export async function parseInvestigationInputText(inputText: string): Promise<Pa
     ...extractQuestionLines(raw),
   ]);
 
-  const requirement = buildRequirementText(aiPayload.requirement, raw, questionHints);
+  const requirement = aiPayload.requirement.trim().length >= 6
+    ? aiPayload.requirement.trim()
+    : fallbackRequirement(raw);
 
   return {
     requirement,
@@ -127,21 +129,6 @@ function mergeAndNormalizeContacts(aiContacts: z.infer<typeof aiContactSchema>[]
   }
 
   return contacts;
-}
-
-function buildRequirementText(parsedRequirement: string, rawInput: string, questionHints: string[]) {
-  const requirementBase = parsedRequirement.trim().length >= 6 ? parsedRequirement.trim() : fallbackRequirement(rawInput);
-  if (questionHints.length === 0) {
-    return requirementBase;
-  }
-
-  const topQuestions = questionHints.slice(0, 8);
-  return [
-    requirementBase,
-    "",
-    "Priority questions user wants answered:",
-    ...topQuestions.map((question, index) => `${index + 1}. ${question}`),
-  ].join("\n");
 }
 
 function fallbackRequirement(rawInput: string) {

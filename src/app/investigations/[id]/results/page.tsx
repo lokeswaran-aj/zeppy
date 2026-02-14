@@ -1,12 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { RankingCards } from "@/components/results/ranking-cards";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { InvestigationResultsResponse } from "@/lib/events";
 
@@ -46,17 +44,11 @@ export default function InvestigationResultsPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-10">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Screen 3 - Results</h1>
-          <p className="text-sm text-muted-foreground">
-            Ranked options and next steps for investigation{" "}
-            <span className="font-mono">{investigationId || "loading..."}</span>.
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href={`/investigations/${investigationId}/live`}>Back to Live View</Link>
-        </Button>
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Decision Brief</h1>
+        <p className="text-sm text-muted-foreground">
+          Ranked outcomes and recommended next actions.
+        </p>
       </header>
 
       {error ? (
@@ -67,23 +59,23 @@ export default function InvestigationResultsPage() {
         </Card>
       ) : null}
 
-      <Card>
+      <Card className="border-border/70 shadow-sm">
         <CardHeader>
-          <CardTitle>Recommendation Summary</CardTitle>
+          <CardTitle>Executive Summary</CardTitle>
           <CardDescription>{data?.requirement ?? "Loading requirement..."}</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            {data?.recommendationSummary ?? "Computing recommendation and ranking..."}
+            {data?.recommendationSummary ?? "Analyzing completed calls and preparing ranked options..."}
           </p>
         </CardContent>
       </Card>
 
       <RankingCards ranked={data?.ranked ?? []} bestCallId={data?.bestCallId} />
 
-      <Card>
+      <Card className="border-border/70 shadow-sm">
         <CardHeader>
-          <CardTitle>Action Items</CardTitle>
+          <CardTitle>Next Actions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {data?.actionItems?.length ? (

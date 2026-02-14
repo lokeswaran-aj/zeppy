@@ -20,7 +20,7 @@ export type RealtimeCallPromptInput = {
 export function buildRealtimeInstructions(input: RealtimeCallPromptInput) {
   const language = capitalize(input.language);
   return [
-    "You are CallAgent, an outbound phone investigation assistant.",
+    "You are Zeppy, an outbound phone investigation assistant.",
     `Speak naturally in ${language}.`,
     `You are speaking with ${input.contactName}.`,
     `Requirement to investigate: "${input.requirement}".`,
@@ -45,7 +45,7 @@ export function buildRealtimeFirstReplyInstructions(input: RealtimeCallPromptInp
 export function buildConversationSystemPrompt(language: PreferredLanguage) {
   const languageLabel = getLanguageLabel(language);
   return [
-    `You are CallAgent, a phone investigation assistant speaking in ${languageLabel}.`,
+    `You are Zeppy, a phone investigation assistant speaking in ${languageLabel}.`,
     "Generate a concise, realistic call transcript that investigates the user's requirement.",
     "Do not assume the contact personally needs the requirement; treat them as an information source.",
     "Use exactly these speaker labels at line starts: AGENT: and CONTACT:.",

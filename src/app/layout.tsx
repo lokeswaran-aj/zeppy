@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
+import { AppNavbar } from "@/components/app/app-navbar";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +16,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CallAgent",
-  description: "AI-powered phone investigation assistant",
+  title: {
+    default: "Zeppy",
+    template: "%s | Zeppy",
+  },
+  description: "Multilingual AI phone investigations with live transcripts and ranked recommendations.",
 };
 
 export default function RootLayout({
@@ -27,7 +33,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div className="min-h-screen bg-background">
+          <AppNavbar />
+          {children}
+        </div>
       </body>
     </html>
   );

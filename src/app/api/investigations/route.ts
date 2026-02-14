@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       : {
           requirement: input.requirement.trim(),
           contacts: input.contacts,
-          questionHints: [],
+          questionHints: input.questionHints ?? [],
         };
   } catch (error) {
     return NextResponse.json(
@@ -50,11 +50,15 @@ export async function POST(request: Request) {
   }
 
   let created;
+  const requirementForExecution = composeRequirementForExecution(
+    normalized.requirement,
+    normalized.questionHints,
+  );
   try {
     created = await db.$transaction(async (tx) => {
       const investigation = await tx.investigation.create({
         data: {
-          requirement: normalized.requirement,
+          requirement: requirementForExecution,
           status: "DRAFT",
           concurrency: 3,
         },
@@ -135,4 +139,27 @@ export async function POST(request: Request) {
     },
     { status: 201 },
   );
+}
+
+function composeRequirementForExecution(requirement: string, questionHints: string[]) {
+  const base = requirement.trim();
+  const cleanedHints = Array.from(
+    new Set(
+      questionHints
+        .map((hint) => hint.trim())
+        .filter(Boolean),
+    ),
+  );
+
+  if (!cleanedHints.length) {
+    return base;
+  }
+
+  const topQuestions = cleanedHints.slice(0, 8);
+  return [
+    base,
+    "",
+    "Priority questions user wants answered:",
+    ...topQuestions.map((question, index) => `${index + 1}. ${question}`),
+  ].join("\n");
 }

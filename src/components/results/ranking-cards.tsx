@@ -11,10 +11,10 @@ type RankingCardsProps = {
 export function RankingCards({ ranked, bestCallId }: RankingCardsProps) {
   if (ranked.length === 0) {
     return (
-      <Card>
+      <Card className="border-border/70 shadow-sm">
         <CardHeader>
-          <CardTitle>No recommendations yet</CardTitle>
-          <CardDescription>Run an investigation to generate ranked options.</CardDescription>
+          <CardTitle>No ranked options yet</CardTitle>
+          <CardDescription>Recommendations appear after calls and extraction complete.</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -23,14 +23,14 @@ export function RankingCards({ ranked, bestCallId }: RankingCardsProps) {
   return (
     <div className="grid gap-4">
       {ranked.map((item, index) => (
-        <Card key={item.callId}>
+        <Card key={item.callId} className="border-border/70 shadow-sm">
           <CardHeader className="space-y-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">
                 #{index + 1} · {item.contactName}
               </CardTitle>
               <div className="flex items-center gap-2">
-                {bestCallId === item.callId ? <Badge>Best Match</Badge> : null}
+                {bestCallId === item.callId ? <Badge>Top Match</Badge> : null}
                 <Badge variant="secondary">Score {item.score}</Badge>
               </div>
             </div>
