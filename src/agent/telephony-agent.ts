@@ -10,6 +10,10 @@ import type { PreferredLanguage } from "@/lib/domain";
 import { getAgentConfig, requireGeminiEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { appendTranscript } from "@/lib/calls/state";
+import {
+  buildRealtimeFirstReplyInstructions,
+  buildRealtimeInstructions,
+} from "@/lib/calls/prompts";
 
 type DispatchMetadata = {
   investigationId: string;
@@ -42,7 +46,11 @@ export default defineAgent({
         // Native audio models reject AUDIO+TEXT response modalities in realtime setup.
         // Keep audio responses and rely on transcription events for persisted text.
         modalities: [Modality.AUDIO],
-        instructions: buildRealtimeInstructions(metadata),
+        instructions: buildRealtimeInstructions({
+          contactName: metadata.contactName,
+          language: metadata.language,
+          requirement: metadata.requirement,
+        }),
         temperature: 0.4,
         inputAudioTranscription: {},
         outputAudioTranscription: {},
@@ -121,13 +129,20 @@ export default defineAgent({
     await session.start({
       room: ctx.room,
       agent: new voice.Agent({
-        instructions: buildRealtimeInstructions(metadata),
+        instructions: buildRealtimeInstructions({
+          contactName: metadata.contactName,
+          language: metadata.language,
+          requirement: metadata.requirement,
+        }),
       }),
     });
 
     await session.generateReply({
-      instructions:
-        `Introduce yourself briefly, greet ${metadata.contactName} by name, mention the requirement in one sentence, and ask 1-2 focused questions. Do not ask whether they personally need the requirement.`,
+      instructions: buildRealtimeFirstReplyInstructions({
+        contactName: metadata.contactName,
+        language: metadata.language,
+        requirement: metadata.requirement,
+      }),
     });
 
     const { callSessionTimeoutSeconds } = getAgentConfig();
@@ -185,29 +200,6 @@ function parseDispatchMetadata(raw: string): DispatchMetadata {
       `Invalid agent dispatch metadata: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
-}
-
-function buildRealtimeInstructions(metadata: DispatchMetadata) {
-  const language = capitalize(metadata.language);
-  return [
-    "You are CallAgent, an outbound phone investigation assistant.",
-    `Speak naturally in ${language}.`,
-    `You are speaking with ${metadata.contactName}.`,
-    `Requirement to investigate: "${metadata.requirement}".`,
-    `In your first turn, greet ${metadata.contactName} by name and mention you are calling regarding this requirement.`,
-    "Do not frame the requirement as your own need, and do not ask whether the callee personally needs it.",
-    "Treat the callee as an information source/provider who can share details relevant to the requirement.",
-    "Ask short, clear follow-up questions to gather requirement-specific facts such as cost/pricing, availability/timeline, location/context, relevant features/constraints, and next steps.",
-    "Adapt to the requirement domain; if it is not about housing, avoid housing-specific assumptions.",
-    "Keep the conversation concise, natural, and practical.",
-  ].join(" ");
-}
-
-function capitalize(value: string) {
-  if (!value) {
-    return value;
-  }
-  return value[0]?.toUpperCase() + value.slice(1).toLowerCase();
 }
 
 function sleep(ms: number) {

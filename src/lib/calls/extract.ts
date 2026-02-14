@@ -3,50 +3,33 @@ import { z } from "zod";
 
 import { requireGeminiEnv } from "@/lib/env";
 
-import { buildExtractionPrompt } from "./prompts";
+import { buildExtractionPrompt, extractionResponseSchema } from "./prompts";
 
-export const extractedFindingSchema = z.object({
+const extractionPayloadSchema = z.object({
   summary: z.string(),
-  monthlyPrice: z.number().nullable(),
+  priceEstimate: z.number().nullable(),
   availability: z.string().nullable(),
-  locationFit: z.string().nullable(),
-  rules: z.array(z.string()),
+  fitSummary: z.string().nullable(),
+  constraints: z.array(z.string()),
+  keyFacts: z.array(z.string()),
   confidence: z.number().min(0).max(1),
   score: z.number().min(0).max(100),
   actionItems: z.array(z.string()),
 });
 
-export type ExtractedFindingResult = z.infer<typeof extractedFindingSchema>;
+export const extractedFindingSchema = extractionPayloadSchema.transform((payload) => ({
+  summary: payload.summary,
+  monthlyPrice: payload.priceEstimate,
+  availability: payload.availability,
+  locationFit: payload.fitSummary,
+  rules: payload.constraints,
+  keyFacts: payload.keyFacts,
+  confidence: payload.confidence,
+  score: payload.score,
+  actionItems: payload.actionItems,
+}));
 
-const extractionResponseSchema = {
-  type: "object",
-  properties: {
-    summary: { type: "string" },
-    monthlyPrice: { type: "number", nullable: true },
-    availability: { type: "string", nullable: true },
-    locationFit: { type: "string", nullable: true },
-    rules: {
-      type: "array",
-      items: { type: "string" },
-    },
-    confidence: { type: "number" },
-    score: { type: "number" },
-    actionItems: {
-      type: "array",
-      items: { type: "string" },
-    },
-  },
-  required: [
-    "summary",
-    "monthlyPrice",
-    "availability",
-    "locationFit",
-    "rules",
-    "confidence",
-    "score",
-    "actionItems",
-  ],
-} as const;
+export type ExtractedFindingResult = z.infer<typeof extractedFindingSchema>;
 
 type ExtractStructuredFindingInput = {
   requirement: string;

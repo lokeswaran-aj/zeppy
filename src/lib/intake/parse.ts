@@ -3,6 +3,10 @@ import { z } from "zod";
 
 import type { PreferredLanguage } from "@/lib/domain";
 import { requireGeminiEnv } from "@/lib/env";
+import {
+  buildIntakeParserPrompt,
+  intakeParserResponseSchema,
+} from "@/lib/calls/prompts";
 
 type ParsedContact = {
   name: string;
@@ -29,35 +33,6 @@ const aiIntakeSchema = z.object({
   generalQuestions: z.array(z.string()).optional().default([]),
   contacts: z.array(aiContactSchema).default([]),
 });
-
-const aiResponseSchema = {
-  type: "object",
-  properties: {
-    requirement: { type: "string" },
-    generalQuestions: {
-      type: "array",
-      items: { type: "string" },
-    },
-    contacts: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          name: { type: "string", nullable: true },
-          phone: { type: "string" },
-          language: { type: "string", nullable: true },
-          notes: { type: "string", nullable: true },
-          questions: {
-            type: "array",
-            items: { type: "string" },
-          },
-        },
-        required: ["name", "phone", "language", "notes", "questions"],
-      },
-    },
-  },
-  required: ["requirement", "generalQuestions", "contacts"],
-} as const;
 
 export async function parseInvestigationInputText(inputText: string): Promise<ParsedInvestigationInput> {
   const raw = inputText.trim();
@@ -94,10 +69,13 @@ async function parseWithGemini(rawInput: string, regexPhones: string[]) {
 
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
-    contents: buildParserPrompt(rawInput, regexPhones),
+    contents: buildIntakeParserPrompt({
+      rawInput,
+      regexPhones,
+    }),
     config: {
       responseMimeType: "application/json",
-      responseSchema: aiResponseSchema,
+      responseSchema: intakeParserResponseSchema,
     },
   });
 
@@ -108,27 +86,6 @@ async function parseWithGemini(rawInput: string, regexPhones: string[]) {
 
   const payload = JSON.parse(text) as unknown;
   return aiIntakeSchema.parse(payload);
-}
-
-function buildParserPrompt(rawInput: string, regexPhones: string[]) {
-  return [
-    "You are extracting structured fields for an outbound phone investigation workflow.",
-    "Return strict JSON only.",
-    "Interpret user text into:",
-    "- requirement: the main inquiry objective",
-    "- contacts: each with name, phone, optional language guess, optional notes, optional contact-level questions",
-    "- generalQuestions: user questions not tied to a specific contact",
-    "Rules:",
-    "- Keep every real contact phone number you can find.",
-    "- If language is not explicit, guess only when confidence is high, otherwise set null.",
-    "- Do not invent phone numbers.",
-    "- Keep requirement concise and actionable.",
-    "",
-    "Raw user input:",
-    rawInput,
-    "",
-    `Phone candidates detected by regex: ${regexPhones.join(", ") || "none"}`,
-  ].join("\n");
 }
 
 function mergeAndNormalizeContacts(aiContacts: z.infer<typeof aiContactSchema>[], fallbackPhones: string[]) {

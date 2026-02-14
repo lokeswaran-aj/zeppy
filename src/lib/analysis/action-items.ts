@@ -35,15 +35,15 @@ export function buildActionItems(input: BuildActionItemsInput): ActionItem[] {
     {
       id: randomUUID(),
       priority: "high",
-      title: `Call ${top.contactName} for confirmation`,
-      detail: `Verify final rent (${top.monthlyPrice ? `~INR ${top.monthlyPrice}` : "TBD"}), deposit, and viewing schedule.`,
+      title: `Follow up with ${top.contactName} to confirm key details`,
+      detail: `Confirm final terms (${top.monthlyPrice ? `estimated price ~INR ${top.monthlyPrice}` : "pricing TBC"}), timeline/availability, and concrete next steps.`,
     },
     {
       id: randomUUID(),
       priority: "medium",
-      title: "Ask for proof and hidden charges",
+      title: "Request written proof of commitments",
       detail:
-        "Request photos/videos, exact location pin, agreement terms, and any extra maintenance/food/electricity costs.",
+        "Ask for supporting details in writing (scope, constraints, inclusions/exclusions, and any additional costs or dependencies).",
     },
   ];
 
