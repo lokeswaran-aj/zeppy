@@ -73,6 +73,7 @@ export type RecommendationItem = {
   phone: string;
   score: number;
   summary: string;
+  findings?: string[];
   monthlyPrice?: number | null;
   availability?: string | null;
   locationFit?: string | null;

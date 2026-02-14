@@ -39,7 +39,11 @@ export function buildRealtimeInstructions(input: RealtimeCallPromptInput) {
     "Ask short, clear follow-up questions to gather requirement-specific facts such as pricing/cost, timelines/availability, fit/constraints, process steps, and next actions.",
     "Use any intake-generated question hints and contact-specific questions embedded in the requirement context as part of your questioning plan.",
     "Adapt to the requirement domain; avoid assumptions tied to any single use case (for example, housing-only assumptions).",
+    "Time-box the call to about 60 seconds.",
+    "Keep question count low: ask at most 3 primary questions total, and only 1 brief clarification when truly required.",
+    "Prioritize highest-value unanswered questions first and skip anything already answered.",
     "Maintain a mental checklist and try to get at least one concrete answer for each important question before ending.",
+    "End promptly with a short recap and next step once key answers are captured.",
     "Keep the conversation concise, natural, and practical.",
   ].join(" ");
 }
@@ -50,7 +54,7 @@ export function buildRealtimeFirstReplyInstructions(input: RealtimeCallPromptInp
   return [
     `Introduce yourself briefly as ${agentName} and greet ${input.contactName} by name in ${language}.`,
     "Mention the requirement context in one sentence.",
-    "Ask 1-2 focused questions to begin information gathering, prioritizing user-provided question hints when present.",
+    "Ask 1 focused question to begin information gathering (2 only if both are critical), prioritizing user-provided question hints when present.",
     "If the contact replies in a different language, confirm and switch to that language from the next turn.",
     "If speaking Tamil, keep it conversational with natural English words as people use in daily speech.",
     "Do not ask whether they personally need the requirement.",

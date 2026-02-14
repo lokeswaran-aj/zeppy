@@ -58,10 +58,12 @@ export function buildRecommendations(input: BuildRecommendationsInput): RankedRe
       const summary = finding.summary || "No summary available.";
       const reasoningParts = [
         budget !== null && finding.monthlyPrice !== null
-          ? `Budget check: INR ${finding.monthlyPrice} vs target INR ${budget}.`
-          : "Budget check: insufficient price data.",
-        finding.locationFit ? `Location fit: ${finding.locationFit}.` : "Location fit unavailable.",
-        finding.availability ? `Availability: ${finding.availability}.` : "Availability not confirmed.",
+          ? `Cost signal: INR ${finding.monthlyPrice} vs target INR ${budget}.`
+          : finding.monthlyPrice !== null
+            ? `Cost signal: INR ${finding.monthlyPrice}.`
+            : "Cost signal: not confirmed.",
+        finding.locationFit ? `Fit signal: ${finding.locationFit}.` : "Fit signal: unavailable.",
+        finding.availability ? `Timeline signal: ${finding.availability}.` : "Timeline signal: not confirmed.",
       ];
 
       return {
@@ -91,7 +93,9 @@ export function buildRecommendationSummary(requirement: string, ranked: RankedRe
 
   const lines = [
     `For requirement "${requirement}", ${top.contactName} is currently the strongest option with score ${top.score}.`,
-    top.monthlyPrice ? `Expected monthly price is around INR ${top.monthlyPrice}.` : "Price is still being validated.",
+    top.monthlyPrice
+      ? `Current cost signal is around INR ${top.monthlyPrice}.`
+      : "Cost signal is still being validated.",
     second
       ? `Backup option is ${second.contactName} (score ${second.score}).`
       : "No backup option scored high enough yet.",

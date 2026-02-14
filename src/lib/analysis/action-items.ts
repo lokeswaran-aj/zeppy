@@ -23,7 +23,8 @@ export function buildActionItems(input: BuildActionItemsInput): ActionItem[] {
         id: randomUUID(),
         priority: "medium",
         title: "Relax one or two constraints",
-        detail: `Re-evaluate requirement "${input.requirement}" for overly strict filters like budget or immediate move-in.`,
+        detail:
+          `Re-evaluate requirement "${input.requirement}" for overly strict filters (for example budget, timing, eligibility, or mandatory features).`,
       },
     ];
   }
@@ -36,7 +37,8 @@ export function buildActionItems(input: BuildActionItemsInput): ActionItem[] {
       id: randomUUID(),
       priority: "high",
       title: `Follow up with ${top.contactName} to confirm key details`,
-      detail: `Confirm final terms (${top.monthlyPrice ? `estimated price ~INR ${top.monthlyPrice}` : "pricing TBC"}), timeline/availability, and concrete next steps.`,
+      detail:
+        `Confirm final terms (${top.monthlyPrice ? `current cost signal ~INR ${top.monthlyPrice}` : "cost signal TBC"}), timeline expectations, and concrete next steps.`,
     },
     {
       id: randomUUID(),
@@ -52,7 +54,7 @@ export function buildActionItems(input: BuildActionItemsInput): ActionItem[] {
       id: randomUUID(),
       priority: "low",
       title: `Keep ${second.contactName} as backup`,
-      detail: "If the top option changes price/availability, follow up immediately with this backup option.",
+      detail: "If the top option changes terms or timing, follow up immediately with this backup option.",
     });
   }
 

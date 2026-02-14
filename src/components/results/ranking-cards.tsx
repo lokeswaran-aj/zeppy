@@ -36,12 +36,22 @@ export function RankingCards({ ranked, bestCallId }: RankingCardsProps) {
             </div>
             <CardDescription>{item.phone}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p>{item.summary}</p>
-            <div className="grid gap-1 text-muted-foreground md:grid-cols-3">
-              <p>Price: {item.monthlyPrice ? `INR ${item.monthlyPrice}` : "N/A"}</p>
-              <p>Availability: {item.availability ?? "N/A"}</p>
-              <p>Location fit: {item.locationFit ?? "N/A"}</p>
+          <CardContent className="space-y-4 text-sm">
+            <div className="space-y-1">
+              <p className="font-medium">Call Summary</p>
+              <p className="text-muted-foreground">{item.summary}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium">Findings</p>
+              {item.findings?.length ? (
+                <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+                  {item.findings.map((finding, findingIndex) => (
+                    <li key={`${item.callId}-finding-${findingIndex}`}>{finding}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted-foreground">No concrete findings were extracted for this call yet.</p>
+              )}
             </div>
           </CardContent>
         </Card>

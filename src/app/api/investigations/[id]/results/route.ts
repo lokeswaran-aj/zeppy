@@ -30,6 +30,7 @@ export async function GET(_: Request, { params }: RouteContext) {
           call: {
             include: {
               contact: true,
+              extractedFinding: true,
             },
           },
         },
@@ -65,6 +66,7 @@ export async function GET(_: Request, { params }: RouteContext) {
       phone: item.call.contact.phone,
       score: Math.round(item.score),
       summary: item.summary,
+      findings: extractFindings(item.call.extractedFinding?.raw),
       monthlyPrice: item.monthlyPrice,
       availability: item.availability,
       locationFit: item.locationFit,
@@ -78,4 +80,57 @@ export async function GET(_: Request, { params }: RouteContext) {
   };
 
   return NextResponse.json(payload);
+}
+
+function extractFindings(raw: unknown) {
+  const extraction = extractExtractionPayload(raw);
+  const keyFacts = getStringArray(extraction?.keyFacts);
+  const rules = getStringArray(extraction?.rules).map((rule) => `Constraint: ${rule}`);
+
+  return uniqueNonEmpty([...keyFacts, ...rules]).slice(0, 8);
+}
+
+function extractExtractionPayload(raw: unknown): Record<string, unknown> | null {
+  if (!isRecord(raw)) {
+    return null;
+  }
+
+  const nested = raw.extraction;
+  if (isRecord(nested)) {
+    return nested;
+  }
+
+  return raw;
+}
+
+function getStringArray(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [] as string[];
+  }
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function uniqueNonEmpty(values: string[]) {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const value of values) {
+    const normalized = value.trim();
+    if (!normalized) {
+      continue;
+    }
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    out.push(normalized);
+  }
+  return out;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
