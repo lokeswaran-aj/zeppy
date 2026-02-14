@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     contacts: Array<{
       name: string;
       phone: string;
-      language: "kannada" | "tamil" | "hindi" | "english";
+      language: string;
     }>;
     questionHints: string[];
   };

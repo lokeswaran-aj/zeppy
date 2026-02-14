@@ -116,19 +116,16 @@ function mergeAndNormalizeContacts(
     seen.add(phone);
     const locationHint = sanitizeOptionalText(contact.locationHint, 120);
     const notes = sanitizeOptionalText(contact.notes, 240);
-    const explicitLanguage = normalizeLanguage(contact.language);
-    const inferred = explicitLanguage
-      ? { language: null, reason: null as string | null }
-      : guessLanguageFromIndianContext(`${locationHint ?? ""}\n${notes ?? ""}`);
+    const parsedLanguage = normalizeLanguage(contact.language);
     const languageReason = sanitizeOptionalText(contact.languageReason, 180)
-      ?? (explicitLanguage
-        ? "Language explicitly mentioned in input."
-        : inferred.reason ?? "No confident regional signal; defaulted to english.");
+      ?? (parsedLanguage
+        ? "Language provided by AI parser."
+        : "Language unavailable from parser output; defaulted to english.");
 
     contacts.push({
       name: sanitizeName(contact.name) || `Contact ${contacts.length + 1}`,
       phone,
-      language: explicitLanguage ?? inferred.language ?? "english",
+      language: parsedLanguage ?? "english",
       locationHint,
       languageReason,
       notes,
@@ -147,13 +144,12 @@ function mergeAndNormalizeContacts(
 
     seen.add(phone);
     const context = findPhoneContext(rawInput, phoneCandidate);
-    const inferred = guessLanguageFromIndianContext(context || rawInput);
     contacts.push({
       name: `Contact ${contacts.length + 1}`,
       phone,
-      language: inferred.language ?? "english",
+      language: "english",
       locationHint: null,
-      languageReason: inferred.reason ?? "No confident regional signal; defaulted to english.",
+      languageReason: "No AI contact language available; defaulted to english.",
       notes: sanitizeOptionalText(context, 240),
       questions: [],
     });
@@ -251,73 +247,12 @@ function findPhoneContext(rawInput: string, phoneCandidate: string) {
   return "";
 }
 
-type LanguageGuess = {
-  language: PreferredLanguage | null;
-  reason: string | null;
-};
-
-const INDIAN_LOCATION_LANGUAGE_HINTS: Array<{
-  language: PreferredLanguage;
-  reason: string;
-  pattern: RegExp;
-}> = [
-  {
-    language: "kannada",
-    reason: "Location hint suggests Karnataka region, so kannada is likely.",
-    pattern:
-      /\b(karnataka|bengaluru|bangalore|mysuru|mysore|mangaluru|hubballi|hubli|dharwad|belagavi|udupi|shivamogga)\b/i,
-  },
-  {
-    language: "tamil",
-    reason: "Location hint suggests Tamil Nadu region, so tamil is likely.",
-    pattern:
-      /\b(tamil nadu|chennai|coimbatore|madurai|trichy|tiruchirappalli|salem|erode|vellore|tirunelveli)\b/i,
-  },
-  {
-    language: "hindi",
-    reason: "Location hint suggests a Hindi-speaking region.",
-    pattern:
-      /\b(delhi|new delhi|ncr|noida|gurgaon|gurugram|ghaziabad|faridabad|lucknow|kanpur|jaipur|patna|indore|bhopal|varanasi|agra|uttar pradesh|madhya pradesh|bihar|rajasthan|haryana|jharkhand|uttarakhand|chhattisgarh|himachal|chandigarh)\b/i,
-  },
-];
-
-function guessLanguageFromIndianContext(text: string | null | undefined): LanguageGuess {
-  const source = text?.trim();
-  if (!source) {
-    return { language: null, reason: null };
-  }
-
-  for (const hint of INDIAN_LOCATION_LANGUAGE_HINTS) {
-    if (hint.pattern.test(source)) {
-      return {
-        language: hint.language,
-        reason: hint.reason,
-      };
-    }
-  }
-
-  return { language: null, reason: null };
-}
-
 function normalizeLanguage(value: string | null | undefined): PreferredLanguage | null {
-  const language = value?.trim().toLowerCase();
-  if (!language) {
+  const normalized = value?.trim().toLowerCase().replace(/\s+/g, " ");
+  if (!normalized) {
     return null;
   }
-
-  if (language.includes("kannada") || language === "kn") {
-    return "kannada";
-  }
-  if (language.includes("tamil") || language === "ta") {
-    return "tamil";
-  }
-  if (language.includes("hindi") || language === "hi" || language.includes("hinglish")) {
-    return "hindi";
-  }
-  if (language.includes("english") || language === "en") {
-    return "english";
-  }
-  return null;
+  return normalized;
 }
 
 function normalizePhone(raw: string) {

@@ -3,11 +3,9 @@
 import { Trash2 } from "lucide-react";
 
 import type { ContactInput } from "@/lib/domain";
-import { PREFERRED_LANGUAGES } from "@/lib/domain";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type ContactRowProps = {
   contact: ContactInput;
@@ -29,26 +27,11 @@ export function ContactRow({ contact, canDelete, onChange, onDelete }: ContactRo
         value={contact.phone}
         onChange={(event) => onChange({ ...contact, phone: event.target.value })}
       />
-      <Select
+      <Input
+        placeholder="Language (auto/english/hindi/telugu...)"
         value={contact.language}
-        onValueChange={(value) =>
-          onChange({
-            ...contact,
-            language: value as ContactInput["language"],
-          })
-        }
-      >
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Language" />
-        </SelectTrigger>
-        <SelectContent>
-          {PREFERRED_LANGUAGES.map((language) => (
-            <SelectItem key={language.value} value={language.value}>
-              {language.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        onChange={(event) => onChange({ ...contact, language: event.target.value })}
+      />
       <Button type="button" variant="outline" size="icon" onClick={onDelete} disabled={!canDelete}>
         <Trash2 className="h-4 w-4" />
       </Button>

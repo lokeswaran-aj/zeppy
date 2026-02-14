@@ -1,14 +1,16 @@
 import type { PreferredLanguage } from "@/lib/domain";
 
-const LANGUAGE_LABELS: Record<PreferredLanguage, string> = {
-  english: "English",
-  hindi: "Hindi",
-  kannada: "Kannada",
-  tamil: "Tamil",
-};
-
 export function getLanguageLabel(language: PreferredLanguage) {
-  return LANGUAGE_LABELS[language];
+  const cleaned = language.trim();
+  if (!cleaned) {
+    return "English";
+  }
+
+  return cleaned
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
 }
 
 export type RealtimeCallPromptInput = {
@@ -85,7 +87,7 @@ export function buildIntakeParserPrompt(input: BuildIntakeParserPromptInput) {
     "For each contact include:",
     "- name: string or null",
     "- phone: string",
-    "- language: one of english/hindi/kannada/tamil or null",
+    "- language: likely spoken language as a free-text string (for example english, hindi, marathi, telugu, tamil, kannada) or null",
     "- languageReason: short reason for language choice (especially when guessed from context)",
     "- locationHint: city/area/state if present, else null",
     "- notes: useful contact-specific details, else null",
@@ -95,8 +97,8 @@ export function buildIntakeParserPrompt(input: BuildIntakeParserPromptInput) {
     "- Put contact-specific questions in that contact's questions.",
     "Language rules (India-focused):",
     "- If explicit language is present, use it.",
-    "- Otherwise infer from location/context when reasonably confident (example: Bengaluru/Karnataka -> kannada, Chennai/Tamil Nadu -> tamil, many north/central regions -> hindi).",
-    "- If not confident, set language to null.",
+    "- Otherwise infer from location/context when reasonably confident (for example Bengaluru/Karnataka -> kannada, Chennai/Tamil Nadu -> tamil, Hyderabad/Telangana -> telugu, Kolkata/West Bengal -> bengali).",
+    "- If not confident, set language to null. Downstream parser will default null to english.",
     "Rules:",
     "- Keep every real contact phone number you can find.",
     "- Do not invent phone numbers.",
@@ -105,6 +107,8 @@ export function buildIntakeParserPrompt(input: BuildIntakeParserPromptInput) {
     "",
     "Raw user input:",
     input.rawInput,
+    "",
+    `Phone candidates detected by regex: ${input.regexPhones.join(", ") || "none"}`,
   ].join("\n");
 }
 

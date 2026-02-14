@@ -1,4 +1,4 @@
-export type PreferredLanguage = "kannada" | "tamil" | "hindi" | "english";
+export type PreferredLanguage = string;
 
 export const PREFERRED_LANGUAGES: Array<{
   value: PreferredLanguage;

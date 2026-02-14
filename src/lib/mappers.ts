@@ -4,7 +4,6 @@ import {
   type Contact,
   type TranscriptEvent,
   InvestigationStatus,
-  PreferredLanguage,
   TranscriptSpeaker,
 } from "@prisma/client";
 
@@ -16,12 +15,12 @@ import type {
   TranscriptSpeaker as TranscriptSpeakerLabel,
 } from "@/lib/domain";
 
-export function toDbLanguage(value: PreferredLanguageLabel): PreferredLanguage {
-  return value.toUpperCase() as PreferredLanguage;
+export function toDbLanguage(value: PreferredLanguageLabel): string {
+  return normalizeLanguage(value);
 }
 
-export function fromDbLanguage(value: PreferredLanguage): PreferredLanguageLabel {
-  return value.toLowerCase() as PreferredLanguageLabel;
+export function fromDbLanguage(value: string | null | undefined): PreferredLanguageLabel {
+  return normalizeLanguage(value);
 }
 
 export function toDbCallStatus(value: CallProgressItem["status"]): CallStatus {
@@ -90,4 +89,9 @@ export function mapTranscriptToLine(
     text: transcript.text,
     createdAt: transcript.createdAt.toISOString(),
   };
+}
+
+function normalizeLanguage(value: string | null | undefined) {
+  const normalized = value?.trim().toLowerCase();
+  return normalized && normalized.length > 0 ? normalized : "english";
 }

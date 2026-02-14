@@ -3,7 +3,12 @@ import { z } from "zod";
 export const structuredContactSchema = z.object({
   name: z.string().min(1, "Contact name is required.").max(100),
   phone: z.string().min(7, "Phone number is too short.").max(25),
-  language: z.enum(["kannada", "tamil", "hindi", "english"]),
+  language: z
+    .string()
+    .trim()
+    .max(80, "Language is too long.")
+    .optional()
+    .default("english"),
 });
 
 export const createInvestigationStructuredSchema = z.object({

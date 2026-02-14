@@ -12,13 +12,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum PreferredLanguage {
-  KANNADA
-  TAMIL
-  HINDI
-  ENGLISH
-}
-
 enum InvestigationStatus {
   DRAFT
   RUNNING
@@ -75,7 +68,7 @@ model Contact {
   investigationId String
   name            String
   phone           String
-  language        PreferredLanguage
+  language        String            @default("english")
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
