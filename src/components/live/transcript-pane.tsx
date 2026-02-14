@@ -2,15 +2,23 @@ import { useEffect, useMemo, useRef } from "react";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import type { TranscriptLine } from "@/lib/domain";
+import type { CallStatus, TranscriptLine } from "@/lib/domain";
 
 type TranscriptPaneProps = {
   lines: TranscriptLine[];
   selectedCallId: string | null;
   selectedContactName?: string;
+  selectedCallStatus?: CallStatus | null;
+  selectedRecordingUrl?: string | null;
 };
 
-export function TranscriptPane({ lines, selectedCallId, selectedContactName }: TranscriptPaneProps) {
+export function TranscriptPane({
+  lines,
+  selectedCallId,
+  selectedContactName,
+  selectedCallStatus,
+  selectedRecordingUrl,
+}: TranscriptPaneProps) {
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
   const selectedLines = useMemo(() => {
     if (!selectedCallId) {
@@ -46,6 +54,18 @@ export function TranscriptPane({ lines, selectedCallId, selectedContactName }: T
             : "Select a call to view live conversation details."}
         </p>
       </div>
+      {selectedCallId && selectedCallStatus === "completed" ? (
+        <div className="space-y-2 rounded-lg border border-border/80 bg-background p-3">
+          <p className="text-xs font-medium text-muted-foreground">Call recording</p>
+          {selectedRecordingUrl ? (
+            <audio className="w-full" controls preload="metadata" src={selectedRecordingUrl} />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Recording unavailable for this call.
+            </p>
+          )}
+        </div>
+      ) : null}
       <ScrollArea className="h-[420px] pr-3">
         <div className="space-y-3">
           {!selectedCallId ? (

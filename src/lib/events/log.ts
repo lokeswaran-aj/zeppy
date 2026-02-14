@@ -3,6 +3,7 @@ import type { EventLog } from "@prisma/client";
 import { db } from "@/lib/db";
 import { fromDbInvestigationStatus, mapCallToProgressItem, mapTranscriptToLine } from "@/lib/mappers";
 import type { SSEEventPayload } from "@/lib/events";
+import { getCallRecordingUrlIfExists } from "@/lib/calls/recording-store";
 
 type PersistEventInput = {
   investigationId: string;
@@ -54,12 +55,19 @@ export async function getInvestigationSnapshot(investigationId: string) {
     take: 500,
   });
 
+  const calls = await Promise.all(
+    investigation.calls.map(async (call) => {
+      const recordingUrl = await getCallRecordingUrlIfExists(call.id);
+      return mapCallToProgressItem(call, { recordingUrl });
+    }),
+  );
+
   return {
     type: "investigation.snapshot" as const,
     investigationId,
     status: fromDbInvestigationStatus(investigation.status),
     requirement: investigation.requirement,
-    calls: investigation.calls.map(mapCallToProgressItem),
+    calls,
     transcripts: transcriptRows.map(mapTranscriptToLine),
   };
 }

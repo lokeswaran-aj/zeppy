@@ -12,6 +12,7 @@ import {
   hangupLiveKitParticipant,
   waitForSipParticipantExit,
 } from "./livekit";
+import { finalizeLiveKitRoomRecording, startLiveKitRoomRecording } from "./recording";
 import { getCallTranscriptSnapshot } from "./state";
 
 export type ExecuteCallInput = {
@@ -32,6 +33,7 @@ export type ExecuteCallInput = {
     },
   ) => Promise<void>;
   onTranscript: (speaker: TranscriptSpeaker, text: string) => Promise<void>;
+  onRecordingReady?: (recordingUrl: string) => Promise<void>;
 };
 
 export async function executeInvestigationCall(input: ExecuteCallInput): Promise<GeminiCallOutput> {
@@ -85,6 +87,12 @@ export async function executeInvestigationCall(input: ExecuteCallInput): Promise
     `Call connected to ${input.contact.name}. Voice agent started.`,
   );
 
+  const egressId = await startLiveKitRoomRecording({
+    investigationId: input.investigationId,
+    callId: input.callId,
+    roomName: dialResult.roomName,
+  });
+
   const { callSessionTimeoutSeconds } = getAgentConfig();
   const waitResult = await waitForSipParticipantExit({
     roomName: dialResult.roomName,
@@ -104,6 +112,22 @@ export async function executeInvestigationCall(input: ExecuteCallInput): Promise
       "Call hit session timeout. Ending the call to keep workflow moving.",
     );
     await hangupLiveKitParticipant(dialResult.roomName, dialResult.participantIdentity);
+  }
+
+  const recordingUrl = await finalizeLiveKitRoomRecording({
+    investigationId: input.investigationId,
+    callId: input.callId,
+    roomName: dialResult.roomName,
+    egressId,
+  });
+  if (recordingUrl) {
+    await input.onRecordingReady?.(recordingUrl);
+    await input.onTranscript("system", "Call recording is available.");
+  } else {
+    await input.onTranscript(
+      "system",
+      "Call recording is unavailable for this call.",
+    );
   }
 
   const transcriptText = await waitForConversationTranscript(input.callId, 12);

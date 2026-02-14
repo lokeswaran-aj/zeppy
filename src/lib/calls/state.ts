@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { persistEvent } from "@/lib/events/log";
 import { mapCallToProgressItem, mapTranscriptToLine, toDbCallStatus, toDbTranscriptSpeaker } from "@/lib/mappers";
 import type { ExtractedFindingResult } from "@/lib/calls/extract";
+import { getCallRecordingUrlIfExists } from "@/lib/calls/recording-store";
 
 type UpdateCallStatusInput = {
   callId: string;
@@ -36,7 +37,8 @@ export async function updateCallStatus(input: UpdateCallStatusInput) {
     },
   });
 
-  const callPayload = mapCallToProgressItem(updated);
+  const recordingUrl = await getCallRecordingUrlIfExists(updated.id);
+  const callPayload = mapCallToProgressItem(updated, { recordingUrl });
 
   await persistEvent({
     investigationId: updated.investigationId,
@@ -49,6 +51,40 @@ export async function updateCallStatus(input: UpdateCallStatusInput) {
   });
 
   return updated;
+}
+
+type PublishCallRecordingInput = {
+  callId: string;
+  recordingUrl: string;
+};
+
+export async function publishCallRecording(input: PublishCallRecordingInput) {
+  const call = await db.call.findUnique({
+    where: { id: input.callId },
+    include: {
+      contact: true,
+    },
+  });
+
+  if (!call) {
+    return null;
+  }
+
+  const callPayload = mapCallToProgressItem(call, {
+    recordingUrl: input.recordingUrl,
+  });
+
+  await persistEvent({
+    investigationId: call.investigationId,
+    callId: call.id,
+    payload: {
+      type: "call.status",
+      investigationId: call.investigationId,
+      call: callPayload,
+    },
+  });
+
+  return callPayload;
 }
 
 type AppendTranscriptInput = {

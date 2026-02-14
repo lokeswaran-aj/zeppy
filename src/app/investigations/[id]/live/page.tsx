@@ -120,6 +120,8 @@ export default function InvestigationLivePage() {
         lines={lines}
         selectedCallId={resolvedSelectedCallId}
         selectedContactName={selectedCall?.contactName}
+        selectedCallStatus={selectedCall?.status ?? null}
+        selectedRecordingUrl={selectedCall?.recordingUrl ?? null}
       />
     </main>
   );

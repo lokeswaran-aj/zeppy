@@ -112,7 +112,7 @@ export async function POST(request: Request) {
     investigationId: created.investigation.id,
     status: "draft" as const,
     requirement: created.investigation.requirement,
-    calls: created.calls.map(mapCallToProgressItem),
+    calls: created.calls.map((call) => mapCallToProgressItem(call)),
     transcripts: [],
   };
 

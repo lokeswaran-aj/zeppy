@@ -19,6 +19,7 @@
     "db:push": "prisma db push"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.19.0",
     "@google/genai": "^1.41.0",
     "@livekit/agents": "^1.0.44",
     "@livekit/agents-plugin-google": "^1.0.44",

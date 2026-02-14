@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+/public/recordings/
+/.callagent-recordings/
 
 # debug
 npm-debug.log*
@@ -40,3 +42,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+
+service-account-key.json

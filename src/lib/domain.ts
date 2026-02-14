@@ -16,9 +16,16 @@ export type ContactInput = {
   language: PreferredLanguage;
 };
 
+export type ParsedContactInput = ContactInput & {
+  locationHint?: string | null;
+  languageReason?: string | null;
+  notes?: string | null;
+  questions?: string[];
+};
+
 export type ParsedIntakePreview = {
   requirement: string;
-  contacts: ContactInput[];
+  contacts: ParsedContactInput[];
   questionHints: string[];
 };
 
@@ -57,6 +64,7 @@ export type CallProgressItem = {
   score?: number | null;
   updatedAt?: string;
   failureReason?: string | null;
+  recordingUrl?: string | null;
 };
 
 export type RecommendationItem = {

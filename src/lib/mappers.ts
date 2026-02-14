@@ -52,7 +52,20 @@ type CallWithContact = Pick<Call, "id" | "status" | "score" | "updatedAt" | "fai
   contact: Pick<Contact, "name" | "phone" | "language">;
 };
 
-export function mapCallToProgressItem(call: CallWithContact): CallProgressItem {
+type MapCallToProgressOptions = {
+  recordingUrl?: string | null;
+};
+
+export function mapCallToProgressItem(
+  call: CallWithContact,
+  options?: MapCallToProgressOptions,
+): CallProgressItem {
+  const hasRecordingOption =
+    options !== undefined &&
+    options !== null &&
+    typeof options === "object" &&
+    "recordingUrl" in options;
+
   return {
     id: call.id,
     contactName: call.contact.name,
@@ -62,6 +75,7 @@ export function mapCallToProgressItem(call: CallWithContact): CallProgressItem {
     score: call.score,
     failureReason: call.failureReason,
     updatedAt: call.updatedAt.toISOString(),
+    ...(hasRecordingOption ? { recordingUrl: options.recordingUrl ?? null } : {}),
   };
 }
 

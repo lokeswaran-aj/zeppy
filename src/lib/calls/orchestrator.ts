@@ -8,7 +8,7 @@ import { buildRecommendationSummary, buildRecommendations } from "@/lib/analysis
 import { logger, maskPhone } from "@/lib/logger";
 
 import { executeInvestigationCall } from "./runner";
-import { appendTranscript, saveExtractedFinding, updateCallStatus } from "./state";
+import { appendTranscript, publishCallRecording, saveExtractedFinding, updateCallStatus } from "./state";
 
 export async function runInvestigation(investigationId: string) {
   const investigation = await db.investigation.findUnique({
@@ -91,6 +91,12 @@ export async function runInvestigation(investigationId: string) {
                   callId: call.id,
                   speaker,
                   text,
+                });
+              },
+              onRecordingReady: async (recordingUrl) => {
+                await publishCallRecording({
+                  callId: call.id,
+                  recordingUrl,
                 });
               },
             });

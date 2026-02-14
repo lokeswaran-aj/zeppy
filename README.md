@@ -40,6 +40,12 @@ Fill all required telephony and AI keys in `.env`:
 - `CALL_SESSION_TIMEOUT_SECONDS`
 - `CALLAGENT_LOG_LEVEL` (optional: `debug`, `info`, `warn`, `error`; default `info`)
 
+Optional recording vars (LiveKit Egress -> GCP):
+- `RECORDING_PROVIDER` (`gcp`)
+- `RECORDING_GCP_BUCKET`
+- `RECORDING_GCP_PREFIX` (optional, defaults to `zeppy/recordings`)
+- `RECORDING_GCP_CREDENTIALS_B64` (base64 of service-account JSON file)
+
 3) Start Postgres and migrate
 
 ```bash
@@ -81,6 +87,7 @@ Open `http://localhost:3000`.
 - `POST /api/investigations/:id/start` - start orchestration
 - `GET /api/investigations/:id/events` - SSE live stream
 - `GET /api/investigations/:id/results` - final ranked output
+- `GET /api/recordings/:callId` - audio stream proxy for recorded calls
 
 ## Notes
 
@@ -88,3 +95,4 @@ Open `http://localhost:3000`.
 - Retry with exponential backoff is enabled for transient call/session failures.
 - Telephony voice path requires the LiveKit agent worker to be running (`npm run dev:agent` or `npm run dev:all`).
 - Secure trunking (TLS + SRTP) must be enabled between Twilio and LiveKit for stable audio.
+- Recording uses LiveKit Egress. On LiveKit Cloud, provide a cloud storage target (GCP in this setup).

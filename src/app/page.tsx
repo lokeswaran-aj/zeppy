@@ -241,13 +241,36 @@ export default function Home() {
                     {preview.contacts.map((contact, index) => (
                       <div
                         key={`${contact.phone}-${index}`}
-                        className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-card px-3 py-2 text-sm"
+                        className="space-y-2 rounded-xl border border-border/70 bg-card px-3 py-2 text-sm"
                       >
-                        <span className="font-medium">{contact.name}</span>
-                        <span className="text-muted-foreground">{contact.phone}</span>
-                        <Badge variant="secondary" className="capitalize">
-                          {contact.language}
-                        </Badge>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">{contact.name}</span>
+                          <span className="text-muted-foreground">{contact.phone}</span>
+                          <Badge variant="secondary" className="capitalize">
+                            {contact.language}
+                          </Badge>
+                        </div>
+                        {contact.locationHint ? (
+                          <p className="text-xs text-muted-foreground">Location hint: {contact.locationHint}</p>
+                        ) : null}
+                        {contact.languageReason ? (
+                          <p className="text-xs text-muted-foreground">
+                            Language guess reason: {contact.languageReason}
+                          </p>
+                        ) : null}
+                        {contact.notes ? (
+                          <p className="text-xs text-muted-foreground">Notes: {contact.notes}</p>
+                        ) : null}
+                        {contact.questions && contact.questions.length > 0 ? (
+                          <div>
+                            <p className="text-xs font-medium">Contact-specific questions</p>
+                            <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+                              {contact.questions.map((question, questionIndex) => (
+                                <li key={`${index}-${questionIndex}-${question}`}>{question}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
                       </div>
                     ))}
                   </div>
