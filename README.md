@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CallAgent
 
-## Getting Started
+AI-powered phone investigation assistant that calls contacts, investigates requirements, streams live progress/transcripts, and recommends the best option with action items.
 
-First, run the development server:
+## Tech Stack
+
+- Next.js 16 App Router + shadcn/ui
+- Next.js API routes (Node runtime)
+- SSE for live updates
+- LiveKit SIP outbound calls (Twilio SIP trunk setup expected)
+- Google Gemini Live API + structured extraction
+- PostgreSQL (Docker) + Prisma
+
+## Local Setup
+
+1) Install dependencies
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2) Configure environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Fill all required telephony and AI keys in `.env`:
+- `LIVEKIT_URL`
+- `LIVEKIT_API_KEY`
+- `LIVEKIT_API_SECRET`
+- `LIVEKIT_AGENT_NAME` (agent worker dispatch target)
+- `LIVEKIT_SIP_TRUNK_ID`
+- `TWILIO_ACCOUNT_SID`
+- `TWILIO_AUTH_TOKEN`
+- `TWILIO_SIP_TRUNK_SID`
+- `GEMINI_API_KEY`
+- `GEMINI_REALTIME_MODEL` (defaults to native audio realtime model)
+- `GEMINI_REALTIME_VOICE`
+- `CALL_SESSION_TIMEOUT_SECONDS`
+- `CALLAGENT_LOG_LEVEL` (optional: `debug`, `info`, `warn`, `error`; default `info`)
 
-## Learn More
+3) Start Postgres and migrate
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run db:up
+npm run db:migrate
+npm run db:generate
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4) Run the app + voice agent worker
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev:all
+```
 
-## Deploy on Vercel
+Open `http://localhost:3000`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Product Flow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Screen 1: Enter requirement + contacts
+2. Screen 2: Watch live call progress and transcript stream
+3. Screen 3: View ranked recommendations + action items
+
+## Scripts
+
+- `npm run dev` - start development server
+- `npm run dev:agent` - start LiveKit telephony agent worker
+- `npm run dev:all` - run app + agent worker together
+- `npm run lint` - lint checks
+- `npm run test` - run tests
+- `npm run build` - production build validation
+- `npm run db:up` / `npm run db:down` - start/stop local Postgres
+- `npm run db:migrate` - run Prisma migration
+- `npm run db:generate` - generate Prisma client
+
+## API Endpoints
+
+- `POST /api/investigations` - create investigation with contacts
+- `POST /api/investigations/:id/start` - start orchestration
+- `GET /api/investigations/:id/events` - SSE live stream
+- `GET /api/investigations/:id/results` - final ranked output
+
+## Notes
+
+- Calls run with max concurrency of 3.
+- Retry with exponential backoff is enabled for transient call/session failures.
+- Telephony voice path requires the LiveKit agent worker to be running (`npm run dev:agent` or `npm run dev:all`).
+- Secure trunking (TLS + SRTP) must be enabled between Twilio and LiveKit for stable audio.

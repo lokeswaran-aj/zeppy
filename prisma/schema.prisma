@@ -1,0 +1,194 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PreferredLanguage {
+  KANNADA
+  TAMIL
+  HINDI
+  ENGLISH
+}
+
+enum InvestigationStatus {
+  DRAFT
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum CallStatus {
+  QUEUED
+  DIALING
+  RINGING
+  CONNECTED
+  ANALYZING
+  COMPLETED
+  FAILED
+}
+
+enum TranscriptSpeaker {
+  AGENT
+  CONTACT
+  SYSTEM
+}
+
+enum ActionPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model Investigation {
+  id                    String               @id @default(cuid())
+  requirement           String
+  status                InvestigationStatus  @default(DRAFT)
+  concurrency           Int                  @default(3)
+  startedAt             DateTime?
+  completedAt           DateTime?
+  recommendationSummary String?
+  bestCallId            String?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  contacts        Contact[]        @relation("InvestigationContacts")
+  calls           Call[]           @relation("InvestigationCalls")
+  recommendations Recommendation[]
+  actionItems     ActionItem[]
+  eventLogs       EventLog[]
+  bestCall        Call?            @relation("InvestigationBestCall", fields: [bestCallId], references: [id])
+
+  @@index([status, createdAt])
+}
+
+model Contact {
+  id              String            @id @default(cuid())
+  investigationId String
+  name            String
+  phone           String
+  language        PreferredLanguage
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  investigation Investigation @relation("InvestigationContacts", fields: [investigationId], references: [id], onDelete: Cascade)
+  calls         Call[]
+
+  @@index([investigationId])
+}
+
+model Call {
+  id                  String     @id @default(cuid())
+  investigationId     String
+  contactId           String
+  status              CallStatus @default(QUEUED)
+  livekitRoomName     String?
+  livekitParticipant  String?
+  livekitSipCallId    String?
+  score               Float?
+  failureReason       String?
+  startedAt           DateTime?
+  endedAt             DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  investigation         Investigation      @relation("InvestigationCalls", fields: [investigationId], references: [id], onDelete: Cascade)
+  contact               Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  transcriptEvents      TranscriptEvent[]
+  extractedFinding      ExtractedFinding?
+  recommendation        Recommendation?
+  eventLogs             EventLog[]
+  bestForInvestigations Investigation[]    @relation("InvestigationBestCall")
+
+  @@unique([investigationId, contactId])
+  @@index([investigationId, status])
+}
+
+model TranscriptEvent {
+  id          String            @id @default(cuid())
+  callId      String
+  speaker     TranscriptSpeaker
+  contactName String
+  text        String
+  createdAt   DateTime          @default(now())
+
+  call Call @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([callId, createdAt])
+}
+
+model ExtractedFinding {
+  id           String   @id @default(cuid())
+  callId       String   @unique
+  monthlyPrice Int?
+  locationFit  String?
+  availability String?
+  rules        Json?
+  confidence   Float?
+  summary      String?
+  raw          Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  call Call @relation(fields: [callId], references: [id], onDelete: Cascade)
+}
+
+model Recommendation {
+  id              String   @id @default(cuid())
+  investigationId String
+  callId          String   @unique
+  rank            Int
+  score           Float
+  summary         String
+  reasoning       String?
+  monthlyPrice    Int?
+  availability    String?
+  locationFit     String?
+  isBest          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  investigation Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  call          Call          @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@unique([investigationId, rank])
+  @@index([investigationId, score])
+}
+
+model ActionItem {
+  id              String         @id @default(cuid())
+  investigationId String
+  priority        ActionPriority @default(MEDIUM)
+  title           String
+  detail          String
+  done            Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  investigation Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+
+  @@index([investigationId, priority])
+}
+
+model EventLog {
+  id              Int      @id @default(autoincrement())
+  investigationId String
+  callId          String?
+  eventType       String
+  payload         Json
+  createdAt       DateTime @default(now())
+
+  investigation Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  call          Call?         @relation(fields: [callId], references: [id], onDelete: SetNull)
+
+  @@index([investigationId, id])
+  @@index([callId, id])
+}
