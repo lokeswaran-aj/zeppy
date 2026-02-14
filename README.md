@@ -58,7 +58,7 @@ Open `http://localhost:3000`.
 
 ## Product Flow
 
-1. Screen 1: Enter requirement + contacts
+1. Screen 1: Enter one free-form input (requirement + contacts + optional questions), review extracted details, then proceed
 2. Screen 2: Watch live call progress and transcript stream
 3. Screen 3: View ranked recommendations + action items
 
@@ -76,7 +76,8 @@ Open `http://localhost:3000`.
 
 ## API Endpoints
 
-- `POST /api/investigations` - create investigation with contacts
+- `POST /api/investigations` - create investigation (supports free-form input parsing via Gemini)
+- `POST /api/intake/parse` - parse free-form text and preview extracted requirement/contacts/questions
 - `POST /api/investigations/:id/start` - start orchestration
 - `GET /api/investigations/:id/events` - SSE live stream
 - `GET /api/investigations/:id/results` - final ranked output

@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { transactionMock, persistEventMock } = vi.hoisted(() => ({
+const { transactionMock, persistEventMock, parseInvestigationInputTextMock } = vi.hoisted(() => ({
   transactionMock: vi.fn(),
   persistEventMock: vi.fn(),
+  parseInvestigationInputTextMock: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -13,6 +14,10 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("@/lib/events/log", () => ({
   persistEvent: persistEventMock,
+}));
+
+vi.mock("@/lib/intake/parse", () => ({
+  parseInvestigationInputText: parseInvestigationInputTextMock,
 }));
 
 import { POST } from "./route";
@@ -118,5 +123,67 @@ describe("POST /api/investigations", () => {
     );
 
     expect(response.status).toBe(400);
+  });
+
+  it("accepts freeform single-input payload", async () => {
+    const now = new Date("2026-01-01T00:00:00.000Z");
+    parseInvestigationInputTextMock.mockResolvedValue({
+      requirement: "Need PG near Koramangala under 15k",
+      contacts: [
+        {
+          name: "Asha Homes",
+          phone: "+919900001111",
+          language: "english",
+        },
+      ],
+      questionHints: ["What is the deposit?"],
+    });
+
+    transactionMock.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
+      const tx = {
+        investigation: {
+          create: vi.fn().mockResolvedValue({
+            id: "inv_2",
+            requirement: "Need PG near Koramangala under 15k",
+          }),
+        },
+        contact: {
+          create: vi.fn().mockResolvedValue({ id: "contact_1" }),
+        },
+        call: {
+          create: vi.fn().mockResolvedValue({
+            id: "call_1",
+            investigationId: "inv_2",
+            status: "QUEUED",
+            score: null,
+            failureReason: null,
+            updatedAt: now,
+            contact: {
+              name: "Asha Homes",
+              phone: "+919900001111",
+              language: "ENGLISH",
+            },
+          }),
+        },
+      };
+
+      return callback(tx);
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/investigations", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          inputText:
+            "Need PG near Koramangala under 15k. Asha Homes +919900001111. Ask about deposit.",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(parseInvestigationInputTextMock).toHaveBeenCalledTimes(1);
   });
 });

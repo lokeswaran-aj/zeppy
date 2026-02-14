@@ -16,6 +16,12 @@ export type ContactInput = {
   language: PreferredLanguage;
 };
 
+export type ParsedIntakePreview = {
+  requirement: string;
+  contacts: ContactInput[];
+  questionHints: string[];
+};
+
 export type CallStatus =
   | "queued"
   | "dialing"
